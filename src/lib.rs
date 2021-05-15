@@ -26,3 +26,20 @@ macro_rules! inline_const {
         C
     }};
 }
+
+#[macro_export]
+macro_rules! const_array {
+    ( < $($generic_ty:ident $( : $lft_bound:lifetime )? ),* $(,)? > [ $t:ty ] $e:expr; $N:expr ) => {{
+        // We must actually use all the const parameters. To avoid adding `Sized` constraints, we
+        // use them behind a pointer indirection.
+        struct Const<$($generic_ty $(: $lft_bound)? ),*>($(*mut $generic_ty),*);
+        impl<$($generic_ty $(: $lft_bound)?),*> Const<$($generic_ty),*> {
+            const C: $t = $e;
+        }
+        [Const::<$($generic_ty),*>::C; $N]
+    }};
+    ( [ $t:ty ] $e:expr; $N:expr ) => {{
+        const C: $t = $e;
+        [C; $N]
+    }};
+}
