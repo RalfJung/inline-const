@@ -29,7 +29,7 @@ macro_rules! __generate_assoc_const {
     }};
     (
         $callback:ident @parse
-        < $($generic_ty:ident $( : $lft_bound:lifetime )? ),+ ,, $(const $generic_const:ident : $generic_const_ty:ty),+ $(,)? >
+        < $($generic_ty:ident $( : $lft_bound:lifetime )? ),+ ; $(const $generic_const:ident : $generic_const_ty:ty),+ $(,)? >
         $($cont:tt)*
     ) => {
         __generate_assoc_const!($callback @parsed <$($generic_ty $(: $lft_bound)? ),*> <$(const $generic_const: $generic_const_ty),*> $($cont)*)
