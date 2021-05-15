@@ -45,15 +45,20 @@ const fn assert(b: bool) {
 fn size_at_least_2<T>() {
     inline_const!{ <T> [()] assert(std::mem::size_of::<T>() >= 2)};
 }
-
 fn const_at_least_2<const N: usize>() {
     inline_const!{ <const N: usize> [()] assert(N >= 2)};
+}
+// When an inline const depends on both types and const generics, a double-comma `,,` must be used to separate the two.
+fn size_at_least<T, const N : usize>() {
+    inline_const!{ <T,, const N: usize> [()] assert(std::mem::size_of::<T>() >= N)};
 }
 
 size_at_least_2::<i32>();
 //size_at_least_2::<i8>();
 const_at_least_2::<4>();
 //const_at_least_2::<1>();
+size_at_least::<i8, 1>();
+//size_at_least::<i8, 2>();
 ```
 
 ### Array of constants
