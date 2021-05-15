@@ -79,4 +79,7 @@ fn make_vecs<T>() -> [Vec<T>; 5] {
     // Generic parameters used in the const expression must be explicitly specified:
     const_array![<T> [Vec<T>] Vec::new(); 5]
 }
+fn make_n_vecs<T, const N: usize>() -> [Vec<T>; N] {
+    const_array![<T> [Vec<T>] Vec::new(); N]
+}
 ```
