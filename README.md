@@ -18,3 +18,13 @@ fn mock_ip(use_localhost: bool) -> &'static Ipv6Addr {
     }
 }
 ```
+
+Unlike the current unstable implementation of inline-const, this crate even supports consts that depend on generic parameters,
+albeit at some further annotation cost: you need to repeat the generic parameters that the constant refers to, and their lifetime bounds.
+```rust
+use inline_const::inline_const;
+
+fn make_static_vec<T: 'static>() -> &'static Vec<T>{
+    inline_const! { <T: 'static> [&'static Vec<T>] &Vec::new() }
+}
+```
