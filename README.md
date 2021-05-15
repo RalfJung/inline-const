@@ -29,6 +29,33 @@ fn make_static_vec<T: 'static>() -> &'static Vec<T>{
 }
 ```
 
+### Static assertions
+
+This can be used to implement static assertions that depend on generic parameters:
+```rust
+use inline_const::inline_const;
+
+#[allow(unconditional_panic)]
+const fn assert(b: bool) {
+    if !b {
+        ["const assertion failed"][1];
+    }
+}
+
+fn size_at_least_2<T>() {
+    inline_const!{ <T> [()] assert(std::mem::size_of::<T>() >= 2)};
+}
+
+fn const_at_least_2<const N: usize>() {
+    inline_const!{ <const N: usize> [()] assert(N >= 2)};
+}
+
+size_at_least_2::<i32>();
+//size_at_least_2::<i8>();
+const_at_least_2::<4>();
+//const_at_least_2::<1>();
+```
+
 ### Array of constants
 
 Since recently, `[C; N]` works for any constant `C`, even for non-`Copy` types.
