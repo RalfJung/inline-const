@@ -10,52 +10,75 @@ pub mod __priv {
     pub use core;
 }
 
-#[macro_export]
-macro_rules! inline_const {
-    ( @parsed < $($generic_ty:ident $( : $lft_bound:lifetime )? ),* > < $(const $generic_const:ident : $generic_const_ty:ty),* > [ $t:ty ] $e:expr) => {{
+#[doc(hidden)]
+#[macro_export(local_inner_macros)]
+macro_rules! __generate_assoc_const {
+    (
+        $callback:ident @parsed
+        < $($generic_ty:ident $( : $lft_bound:lifetime )? ),* > < $(const $generic_const:ident : $generic_const_ty:ty),* >
+        [ $t:ty ] $e:expr ;
+        $($cont:tt)*
+    ) => {{
         // We must actually use all the const parameters. To avoid adding `Sized` constraints, we
         // use them behind a pointer indirection.
         struct Const<$($generic_ty $(: $lft_bound)?,)* $(const $generic_const: $generic_const_ty,)*>($(*mut $generic_ty),*);
         impl<$($generic_ty $(: $lft_bound)?,)* $(const $generic_const: $generic_const_ty,)*> Const<$($generic_ty,)* $($generic_const,)*> {
             const C: $t = $e;
         }
-        Const::<$($generic_ty,)* $($generic_const,)*>::C
+        $callback!(Const::<$($generic_ty,)* $($generic_const,)*>::C, $($cont)*)
     }};
-    ( < $($generic_ty:ident $( : $lft_bound:lifetime )? ),+ ,, $(const $generic_const:ident : $generic_const_ty:ty),+ $(,)? > [ $t:ty ] $e:expr) => {
-        inline_const!(@parsed <$($generic_ty $(: $lft_bound)? ),*> <$(const $generic_const: $generic_const_ty),*> [$t] $e)
+    (
+        $callback:ident @parse
+        < $($generic_ty:ident $( : $lft_bound:lifetime )? ),+ ,, $(const $generic_const:ident : $generic_const_ty:ty),+ $(,)? >
+        $($cont:tt)*
+    ) => {
+        __generate_assoc_const!($callback @parsed <$($generic_ty $(: $lft_bound)? ),*> <$(const $generic_const: $generic_const_ty),*> $($cont)*)
     };
-    ( < $(const $generic_const:ident : $generic_const_ty:ty),+ $(,)? > [ $t:ty ] $e:expr) => {
-        inline_const!(@parsed <> <$(const $generic_const: $generic_const_ty),*> [$t] $e)
+    (
+        $callback:ident @parse < $(const $generic_const:ident : $generic_const_ty:ty),+ $(,)? >
+        $($cont:tt)*
+    ) => {
+        __generate_assoc_const!($callback @parsed <> <$(const $generic_const: $generic_const_ty),*> $($cont)*)
     };
-    ( < $($generic_ty:ident $( : $lft_bound:lifetime )? ),+ $(,)? > [ $t:ty ] $e:expr) => {
-        inline_const!(@parsed <$($generic_ty $(: $lft_bound)? ),*> <> [$t] $e)
+    (
+        $callback:ident @parse < $($generic_ty:ident $( : $lft_bound:lifetime )? ),* $(,)? > // covers the empty case
+        $($cont:tt)*
+    ) => {
+        __generate_assoc_const!($callback @parsed <$($generic_ty $(: $lft_bound)? ),*> <> $($cont)*)
     };
-    ( [ $t:ty ] $e:expr) => {
-        inline_const!(@parsed <> <> [$t] $e)
+    (
+        $callback:ident @parse [ $t:ty ] $($cont:tt)*
+    ) => {
+        __generate_assoc_const!($callback @parsed <> <> [$t] $($cont)*)
     };
 }
 
+#[doc(hidden)]
 #[macro_export]
+macro_rules! __inline_const_callback {
+    ($const:path, @emp) => {
+        $const
+    }
+}
+#[macro_export(local_inner_macros)]
+macro_rules! inline_const {
+    ( $($params:tt)* ) => {
+        __generate_assoc_const!(__inline_const_callback @parse $($params)* ; @emp)
+    };
+}
+
+#[doc(hidden)]
+#[macro_export]
+macro_rules! __const_array_callback {
+    ($const:path, $N:expr) => {
+        [$const; $N]
+    }
+}
+#[macro_export(local_inner_macros)]
 macro_rules! const_array {
-    ( @parsed < $($generic_ty:ident $( : $lft_bound:lifetime )? ),* > < $(const $generic_const:ident : $generic_const_ty:ty),* > [ $t:ty ] $e:expr ; $N:expr) => {{
-        // We must actually use all the const parameters. To avoid adding `Sized` constraints, we
-        // use them behind a pointer indirection.
-        struct Const<$($generic_ty $(: $lft_bound)?,)* $(const $generic_const: $generic_const_ty,)*>($(*mut $generic_ty),*);
-        impl<$($generic_ty $(: $lft_bound)?,)* $(const $generic_const: $generic_const_ty,)*> Const<$($generic_ty,)* $($generic_const,)*> {
-            const C: $t = $e;
-        }
-        [Const::<$($generic_ty,)* $($generic_const,)*>::C; $N]
-    }};
-    ( < $($generic_ty:ident $( : $lft_bound:lifetime )? ),+ ,, $(const $generic_const:ident : $generic_const_ty:ty),+ $(,)? > [ $t:ty ] $e:expr ; $N:expr) => {
-        const_array!(@parsed <$($generic_ty $(: $lft_bound)? ),*> <$(const $generic_const: $generic_const_ty),*> [$t] $e; $N)
-    };
-    ( < $(const $generic_const:ident : $generic_const_ty:ty),+ $(,)? > [ $t:ty ] $e:expr ; $N:expr) => {
-        const_array!(@parsed <> <$(const $generic_const: $generic_const_ty),*> [$t] $e; $N)
-    };
-    ( < $($generic_ty:ident $( : $lft_bound:lifetime )? ),+ $(,)? > [ $t:ty ] $e:expr ; $N:expr) => {
-        const_array!(@parsed <$($generic_ty $(: $lft_bound)? ),*> <> [$t] $e; $N)
-    };
-    ( [ $t:ty ] $e:expr ; $N:expr) => {
-        const_array!(@parsed <> <> [$t] $e; $N)
+    ( $($params:tt)* ) => {
+        // Conveniently, the surface user syntax already contains a `;` and then the remaining
+        // arguments, so we just re-use those for the `;` expected by __generate_assoc_const.
+        __generate_assoc_const!(__const_array_callback @parse $($params)*)
     };
 }
