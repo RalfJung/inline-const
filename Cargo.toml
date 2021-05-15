@@ -10,4 +10,5 @@ license = "MIT/Apache-2.0"
 
 edition = "2018"
 
-[dependencies]
+[dev-dependencies]
+doc-comment = "0.3"

@@ -1,7 +1,13 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
+#[cfg(doctest)]
+#[macro_use]
+extern crate doc_comment;
+#[cfg(doctest)]
+doctest!("../README.md");
+
+#[macro_export]
+macro_rules! inline_const {
+    ( [ $t:ty ] $e:expr) => {{
+        const C: $t = $e;
+        C
+    }}
 }
