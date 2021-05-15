@@ -1,9 +1,13 @@
 [package]
 name = "inline-const"
 version = "0.0.1"
+
 authors = ["Ralf Jung <post+crates@ralfj.de>"]
 readme = "README.md"
 repository = "https://github.com/RalfJung/inline-const"
+description = "Inline consts implemented as a macro"
+license = "MIT/Apache-2.0"
+
 edition = "2018"
 
 [dependencies]
