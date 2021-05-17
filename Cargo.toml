@@ -1,6 +1,6 @@
 [package]
 name = "inline-const"
-version = "0.0.1"
+version = "0.1.0"
 
 authors = ["Ralf Jung <post+crates@ralfj.de>"]
 readme = "README.md"
